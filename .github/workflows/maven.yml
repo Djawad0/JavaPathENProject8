@@ -28,6 +28,13 @@ jobs:
         distribution: 'temurin'
         cache: maven
         
+    - name: Vérifier présence des JARs
+      run: |
+        pwd
+        ls -l libs
+      working-directory: TourGuide
+
+        
     - name: Install gpsUtil.jar
       run: mvn install:install-file \
           -Dfile=libs/gpsUtil.jar \
