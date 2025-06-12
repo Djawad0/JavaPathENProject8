@@ -37,7 +37,7 @@ jobs:
         
     - name: Install gpsUtil.jar
       run: mvn install:install-file \
-          -Dfile=${{ github.workspace }}/TourGuide/libs/gpsUtil.jar \
+          -Dfile=${{ github.workspace }}/JavaPathENProject8/TourGuide/libs/gpsUtil.jar \
           -DgroupId=gpsUtil \
           -DartifactId=gpsUtil \
           -Dversion=1.0.0 \
@@ -46,7 +46,7 @@ jobs:
 
     - name: Install TripPricer.jar
       run: mvn install:install-file \
-          -Dfile=${{ github.workspace }}/TourGuide/libs/TripPricer.jar \
+          -Dfile=${{ github.workspace }}/JavaPathENProject8/TourGuide/libs/TripPricer.jar \
           -DgroupId=tripPricer \
           -DartifactId=tripPricer \
           -Dversion=1.0.0 \
@@ -55,7 +55,7 @@ jobs:
 
     - name: Install RewardCentral.jar
       run: mvn install:install-file \
-          -Dfile=${{ github.workspace }}/TourGuide/libs/RewardCentral.jar \
+          -Dfile=${{ github.workspace }}/JavaPathENProject8/TourGuide/libs/RewardCentral.jar \
           -DgroupId=rewardCentral \
           -DartifactId=rewardCentral \
           -Dversion=1.0.0 \
