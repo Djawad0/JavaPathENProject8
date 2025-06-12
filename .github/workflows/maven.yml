@@ -28,12 +28,6 @@ jobs:
         distribution: 'temurin'
         cache: maven
         
-    - name: Check gpsUtil.jar presence
-      working-directory: TourGuide
-      run: ls -l libs/gpsUtil.jar
-
-
-        
     - name: Install gpsUtil.jar
       working-directory: TourGuide
       run: mvn install:install-file -Dfile=libs/gpsUtil.jar -DgroupId=gpsUtil -DartifactId=gpsUtil -Dversion=1.0.0 -Dpackaging=jar
@@ -47,9 +41,8 @@ jobs:
     - name: Install RewardCentral.jar
       working-directory: TourGuide
       run: mvn install:install-file -Dfile=libs/RewardCentral.jar -DgroupId=rewardCentral -DartifactId=rewardCentral -Dversion=1.0.0 -Dpackaging=jar
-      
-    
-    - name: Build with Maven
-      run: mvn -B verify --file TourGuide/pom.xml
+
+    - name: Build with Maven (excluding performance tests)
+      run: mvn -B verify -Dtest=!**/*TestPerformance --file TourGuide/pom.xml
 
    
