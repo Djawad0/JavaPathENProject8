@@ -8,6 +8,7 @@ import com.openclassrooms.tourguide.user.UserReward;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +16,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -38,6 +43,7 @@ public class TourGuideService {
 	private final TripPricer tripPricer = new TripPricer();
 	public final Tracker tracker;
 	boolean testMode = true;
+	private final ExecutorService defaultExecutor = Executors.newFixedThreadPool(300);
 
 	public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
 		this.gpsUtil = gpsUtil;
@@ -59,7 +65,7 @@ public class TourGuideService {
 		return user.getUserRewards();
 	}
 
-	public VisitedLocation getUserLocation(User user) {
+	public VisitedLocation getUserLocation(User user) throws InterruptedException, ExecutionException {
 		VisitedLocation visitedLocation = (user.getVisitedLocations().size() > 0) ? user.getLastVisitedLocation()
 				: trackUserLocation(user);
 		return visitedLocation;
@@ -89,21 +95,53 @@ public class TourGuideService {
 	}
 
 	public VisitedLocation trackUserLocation(User user) {
+		try {
+	        return trackUserLocationAsync(user, defaultExecutor).get();
+	    } catch (InterruptedException e) {
+	        Thread.currentThread().interrupt(); 
+	        throw new RuntimeException("Thread interrupted during location tracking", e);
+	    } catch (ExecutionException e) {
+	        throw new RuntimeException("Failed to complete async location tracking", e.getCause());
+	    }
+	}
+	
+	public CompletableFuture<VisitedLocation> trackUserLocationAsync(User user, ExecutorService executor) {
+		 return CompletableFuture.supplyAsync(() -> {
 		VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
 		user.addToVisitedLocations(visitedLocation);
+		return visitedLocation;
+		 }, executor).thenApplyAsync(visitedLocation -> {
 		rewardsService.calculateRewards(user);
 		return visitedLocation;
+		 }, executor);
 	}
 
-	public List<Attraction> getNearByAttractions(VisitedLocation visitedLocation) {
-		List<Attraction> nearbyAttractions = new ArrayList<>();
-		for (Attraction attraction : gpsUtil.getAttractions()) {
-			if (rewardsService.isWithinAttractionProximity(attraction, visitedLocation.location)) {
-				nearbyAttractions.add(attraction);
-			}
-		}
+	public List<Map<String, Object>> getNearByAttractions(VisitedLocation visitedLocation, String userName) {
+		
+		GpsUtil gpsUtil = new GpsUtil();
+    	
+    	List<Attraction> closestAttractions = gpsUtil.getAttractions().stream()
+    		    .sorted(Comparator.comparingDouble(a -> rewardsService.getDistance(visitedLocation.location, a)))
+    		    .limit(5)
+    		    .collect(Collectors.toList());
+    	
+    	 List<Map<String, Object>> result = new ArrayList<>();
 
-		return nearbyAttractions;
+    	    for (Attraction attraction : closestAttractions) {
+    	        Map<String, Object> attractionInfo = new HashMap<>();
+    	        double distance = rewardsService.getDistance(visitedLocation.location, attraction);
+    	        int rewardPoints = rewardsService.getRewardPoints(attraction, getUser(userName));
+
+    	        attractionInfo.put("attractionName", attraction.attractionName);
+    	        attractionInfo.put("attractionLocation", Map.of("latitude", attraction.latitude, "longitude", attraction.longitude));
+    	        attractionInfo.put("userLocation", Map.of("latitude", visitedLocation.location.latitude, "longitude", visitedLocation.location.longitude));
+    	        attractionInfo.put("distance", distance);
+    	        attractionInfo.put("rewardPoints", rewardPoints);
+
+    	        result.add(attractionInfo);
+    	    }
+    	
+    	return result;
 	}
 
 	private void addShutDownHook() {
