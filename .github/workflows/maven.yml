@@ -35,6 +35,7 @@ jobs:
           -DartifactId=gpsUtil \
           -Dversion=1.0.0 \
           -Dpackaging=jar
+      working-directory: TourGuide
 
     - name: Install TripPricer.jar
       run: mvn install:install-file \
@@ -43,6 +44,7 @@ jobs:
           -DartifactId=tripPricer \
           -Dversion=1.0.0 \
           -Dpackaging=jar
+      working-directory: TourGuide
 
     - name: Install RewardCentral.jar
       run: mvn install:install-file \
@@ -51,6 +53,7 @@ jobs:
           -DartifactId=rewardCentral \
           -Dversion=1.0.0 \
           -Dpackaging=jar
+      working-directory: TourGuide
     
     - name: Build with Maven
       run: mvn -B verify --file TourGuide/pom.xml
