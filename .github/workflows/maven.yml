@@ -45,4 +45,11 @@ jobs:
     - name: Build with Maven (excluding performance tests)
       run: mvn -B verify -Dtest=!**/*TestPerformance --file TourGuide/pom.xml
 
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: tourguide-jar
+        path: TourGuide/target/*.jar
+
+
    
