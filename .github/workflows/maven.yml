@@ -30,7 +30,7 @@ jobs:
         
     - name: Install gpsUtil.jar
       run: mvn install:install-file \
-          -Dfile=TourGuide/libs/gpsUtil.jar \
+          -Dfile=libs/gpsUtil.jar \
           -DgroupId=gpsUtil \
           -DartifactId=gpsUtil \
           -Dversion=1.0.0 \
@@ -39,7 +39,7 @@ jobs:
 
     - name: Install TripPricer.jar
       run: mvn install:install-file \
-          -Dfile=TourGuide/libs/TripPricer.jar \
+          -Dfile=libs/TripPricer.jar \
           -DgroupId=tripPricer \
           -DartifactId=tripPricer \
           -Dversion=1.0.0 \
@@ -48,7 +48,7 @@ jobs:
 
     - name: Install RewardCentral.jar
       run: mvn install:install-file \
-          -Dfile=TourGuide/libs/RewardCentral.jar \
+          -Dfile=libs/RewardCentral.jar \
           -DgroupId=rewardCentral \
           -DartifactId=rewardCentral \
           -Dversion=1.0.0 \
