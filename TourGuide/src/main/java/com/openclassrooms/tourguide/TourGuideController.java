@@ -1,15 +1,24 @@
 package com.openclassrooms.tourguide;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import gpsUtil.GpsUtil;
 import gpsUtil.location.Attraction;
 import gpsUtil.location.VisitedLocation;
 
+import com.openclassrooms.tourguide.service.RewardsService;
 import com.openclassrooms.tourguide.service.TourGuideService;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
@@ -22,13 +31,16 @@ public class TourGuideController {
 	@Autowired
 	TourGuideService tourGuideService;
 	
+	@Autowired
+	RewardsService rewardsService;
+	
     @RequestMapping("/")
     public String index() {
         return "Greetings from TourGuide!";
     }
     
     @RequestMapping("/getLocation") 
-    public VisitedLocation getLocation(@RequestParam String userName) {
+    public VisitedLocation getLocation(@RequestParam String userName) throws InterruptedException, ExecutionException {
     	return tourGuideService.getUserLocation(getUser(userName));
     }
     
@@ -42,9 +54,11 @@ public class TourGuideController {
         // The reward points for visiting each Attraction.
         //    Note: Attraction reward points can be gathered from RewardsCentral
     @RequestMapping("/getNearbyAttractions") 
-    public List<Attraction> getNearbyAttractions(@RequestParam String userName) {
+    public List<Map<String, Object>> getNearbyAttractions(@RequestParam String userName) throws InterruptedException, ExecutionException {	
+    	User user = new User(UUID.randomUUID(), userName, "000", "jon@tourGuide.com");
+		tourGuideService.addUser(user);
     	VisitedLocation visitedLocation = tourGuideService.getUserLocation(getUser(userName));
-    	return tourGuideService.getNearByAttractions(visitedLocation);
+    	return tourGuideService.getNearByAttractions(visitedLocation, userName);
     }
     
     @RequestMapping("/getRewards") 
