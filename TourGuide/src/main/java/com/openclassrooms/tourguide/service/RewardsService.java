@@ -1,9 +1,14 @@
 package com.openclassrooms.tourguide.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -44,21 +49,16 @@ public class RewardsService {
 	}
 	
 	public void calculateRewards(User user) {
-		List<VisitedLocation> userLocations = user.getVisitedLocations();
 		List<Attraction> attractions = gpsUtil.getAttractions();
-		
-		for(int i = 0; i < userLocations.size(); i++) {
-			for(int j = 0; j < attractions.size(); j++) {
-				 Attraction attraction = attractions.get(j);
-		         VisitedLocation visitedLocation = userLocations.get(i);
-		            
-		         if(user.getUserRewards().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
-						if(nearAttraction(visitedLocation, attraction)) {
-							user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
-						}
-					}
-			}
-		}
+
+		for(VisitedLocation visitedLocation : new ArrayList<>(user.getVisitedLocations())) {
+			for(Attraction attraction : attractions) {
+				if(user.getUserRewards().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0
+						&& nearAttraction(visitedLocation, attraction)) {
+					user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));		
+				}
+			}	
+		}   
 	}
 	
 	public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
