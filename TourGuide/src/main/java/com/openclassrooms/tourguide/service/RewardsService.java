@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class RewardsService {
 	private int attractionProximityRange = 200;
 	private final GpsUtil gpsUtil;
 	private final RewardCentral rewardsCentral;
+	ExecutorService executor = Executors.newFixedThreadPool(100);
 	
 	public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
 		this.gpsUtil = gpsUtil;
@@ -44,10 +46,20 @@ public class RewardsService {
 		proximityBuffer = defaultProximityBuffer;
 	}
 	
-	public CompletableFuture<Void> calculateRewardsAsync(User user, ExecutorService executor) {
-	    return CompletableFuture.runAsync(() -> calculateRewards(user), executor);
+	public void calculateRewardsForAllUsers(List<User> users) {
+	    List<CompletableFuture<Void>> futures = users.stream()
+	        .map(user -> CompletableFuture.runAsync(() -> {
+	        	try {
+	        	calculateRewards(user);
+	        	} catch (Exception e) {
+                    e.printStackTrace();
+                }
+	        	}, executor))
+	        .collect(Collectors.toList());
+
+	    futures.forEach(CompletableFuture::join);
 	}
-	
+
 	public void calculateRewards(User user) {
 		List<Attraction> attractions = gpsUtil.getAttractions();
 
