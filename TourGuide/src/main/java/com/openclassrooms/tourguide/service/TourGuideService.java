@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,7 +44,7 @@ public class TourGuideService {
 	private final TripPricer tripPricer = new TripPricer();
 	public final Tracker tracker;
 	boolean testMode = true;
-	private final ExecutorService defaultExecutor = Executors.newFixedThreadPool(300);
+	private final ExecutorService executor = Executors.newFixedThreadPool(100);
 
 	public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
 		this.gpsUtil = gpsUtil;
@@ -93,29 +94,34 @@ public class TourGuideService {
 		user.setTripDeals(providers);
 		return providers;
 	}
-
-	public VisitedLocation trackUserLocation(User user) {
-		try {
-	        return trackUserLocationAsync(user, defaultExecutor).get();
-	    } catch (InterruptedException e) {
-	        Thread.currentThread().interrupt(); 
-	        throw new RuntimeException("Thread interrupted during location tracking", e);
-	    } catch (ExecutionException e) {
-	        throw new RuntimeException("Failed to complete async location tracking", e.getCause());
-	    }
+	
+	public void stopService() {
+	    executor.shutdown();
 	}
 	
-	public CompletableFuture<VisitedLocation> trackUserLocationAsync(User user, ExecutorService executor) {
-		 return CompletableFuture.supplyAsync(() -> {
+	public void trackAllUsers() {
+	    List<User> allUsers = getAllUsers(); 
+
+	    List<CompletableFuture<Void>> futures = allUsers.stream()
+	            .map(user -> CompletableFuture.runAsync(() -> {
+	                try {
+	                    trackUserLocation(user);
+	                } catch (Exception e) {
+	                    e.printStackTrace();
+	                }
+	            }, executor))
+	            .collect(Collectors.toList());
+
+	    futures.forEach(CompletableFuture::join);
+	}
+	
+	public VisitedLocation trackUserLocation(User user) {
 		VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
 		user.addToVisitedLocations(visitedLocation);
-		return visitedLocation;
-		 }, executor).thenApplyAsync(visitedLocation -> {
 		rewardsService.calculateRewards(user);
 		return visitedLocation;
-		 }, executor);
 	}
-
+	
 	public List<Map<String, Object>> getNearByAttractions(VisitedLocation visitedLocation, String userName) {
 		
 		GpsUtil gpsUtil = new GpsUtil();
