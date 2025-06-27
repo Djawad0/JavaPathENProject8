@@ -31,9 +31,6 @@ public class TourGuideController {
 	@Autowired
 	TourGuideService tourGuideService;
 	
-	@Autowired
-	RewardsService rewardsService;
-	
     @RequestMapping("/")
     public String index() {
         return "Greetings from TourGuide!";
